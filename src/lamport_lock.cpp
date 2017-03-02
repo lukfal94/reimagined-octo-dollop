@@ -8,12 +8,7 @@ LamportLock::LamportLock(int size) :
   labels.resize(size, 0);
 }
 
-LamportLock::~LamportLock()
-{
-
-}
-
-LamportLock::lock(int pid)
+void LamportLock::lock(int pid)
 {
   int waiting = 0;
   int counter = 0;
@@ -39,7 +34,7 @@ LamportLock::lock(int pid)
 
       //Keep waiting if someone else is waiting
       //and their number is lower than ours
-      if(flags[i] && (labels[i] < labels[pid])
+      if(flags[i] && (labels[i] < labels[pid]))
       {
         waiting = 1;
         break;
@@ -55,7 +50,7 @@ LamportLock::lock(int pid)
   } while(waiting);
 }
 
-LamportLock::unlock(int pid)
+void LamportLock::unlock(int pid)
 {
   // Indicate we're no longer waiting
   flags[pid] = false;

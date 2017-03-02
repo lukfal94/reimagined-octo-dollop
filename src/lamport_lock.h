@@ -13,8 +13,8 @@
 class LamportLock : public Lock
 {
 public:
-  LamportLock() {};
-  ~Lock()       {};
+  LamportLock(int numThreads);
+  ~LamportLock() {};
 
   void lock(int pid);
   void unlock(int pid);
@@ -27,7 +27,7 @@ private:
   std::vector<unsigned int> labels;
 
   unsigned int  maxLabel(); 
-}
+};
 
 
 #endif

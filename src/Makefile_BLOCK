@@ -8,9 +8,12 @@ DEPS = atomic_value.h \
 			 fast_rand.h \
 			 fifoqueue.h \
 			 lamport_lock.h \
-			 lock.h
+			 lock.h \
+			 queue_exceptions.h
 			 
-OBJ = main-block.o
+OBJ = main-block.o \
+			lamport_lock.o
+
 EXC = main_block
 
 %.o: %.cpp $(DEPS)

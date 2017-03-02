@@ -11,16 +11,18 @@
 #include <vector>
 
 #include "fifoqueue.h"
+#include "lamport_lock.h"
+#include "queue_exceptions.h"
 
 template<class T>
 class BlockingQueue : public FIFOQueue<T>
 {
 public:
-  BlockingQueue<T>(int size);
+  BlockingQueue<T>(int size, int threads = 1);
   ~BlockingQueue<T>();
 
-  bool enq(T item);
-  T    deq();
+  bool add(T item);
+  T    remove();
 
 private:
   T *items;
@@ -31,13 +33,21 @@ private:
   //Implement as a bounded size queue
   int size;
   int capacity;
+
+  Lock        *headLock;
+  Lock        *tailLock;
+  unsigned int numThreads;
 };
 
 template<class T>
-BlockingQueue<T>::BlockingQueue(int tCap)
+BlockingQueue<T>::BlockingQueue(int tCap, int threadcount)
 {
   items    = new T[tCap];
-  capacity = tCap;
+  capacity = tCap; 
+  numThreads = threadcount;
+
+  headLock = new LamportLock(numThreads);
+  tailLock = new LamportLock(numThreads);
 
   size = 0;
   head = 0; 
@@ -45,49 +55,47 @@ BlockingQueue<T>::BlockingQueue(int tCap)
 }
 
 template<class T>
-bool BlockingQueue<T>::enq(T item)
+bool BlockingQueue<T>::add(T item)
 {
-  if( (tail - head) == capacity )
+  tailLock->lock();
+  try
   {
-    std::cout << "Queue is full!" << std::endl;
-    return false;
+    if( (tail - head) == capacity )
+    {
+      std::cout << "Queue is full!" << std::endl;
+      return false;
+    }
+    else
+    {
+      //    std::cout << "Enqueued: " << item << std::endl;
+      items[tail++ % capacity] = item;
+      return true;
+    }
   }
-  else
+  catch(const exception& e)
   {
-//    std::cout << "Enqueued: " << item << std::endl;
-    items[tail++ % capacity] = item;
-    return true;
-  }
-}
-
-template<class T>
-T BlockingQueue<T>::deq()
-{
-  if( tail == head )
-  {
-    std::cout << "Queue is empty!" << std::endl;
-    throw -1;
-  }
-  else
-  {
-    return items[head++ % capacity];
+    cout << e.what() << endl;
+    tailLock->unlock();
   }
 }
 
-template<class T>
-bool BlockingQueue<T>::isEmpty()
+  template<class T>
+T BlockingQueue<T>::remove()
 {
-  if( tail == head )
-	  return true;
-  else
-	  return false;
-}
-
-template<class T>
-void BlockingQueue<T>::printQueue()
-{
-  int tempHead = head;
-  //while(tempHead != tail)
-	  //std::cout << items[tempHead++ % capacity] << " ";
+  try
+  {
+    if( tail == head )
+    {
+      throw QueueEmptyException();
+    }
+    else
+    {
+      return items[head++ % capacity];
+    }
+  }
+  catch(const exception& e)
+  {
+    cout << e.what() << endl;
+  }
 }
 #endif /* BASIC_QUEUE_H */
