@@ -1,7 +1,9 @@
 #include <atomic>
-#include <thread>
 #include <iostream>
+#include <functional>
 #include <string>
+#include <thread>
+#include <utility>
 
 #include "atomic_value.h"
 #include "blocking_queue.h"
@@ -12,7 +14,7 @@
 
 using namespace std;
 
-atomic<unsigned int> numOps(100);
+atomic<unsigned int> numOps(1000000);
 
 //template<class T>
 void do_work(FIFOQueue<int>* queue, unsigned int add_prob, unsigned int remove_prob)
@@ -28,7 +30,6 @@ void do_work(FIFOQueue<int>* queue, unsigned int add_prob, unsigned int remove_p
   // on the queue
   while(numOps-- > 0)
   {
-    cout << numOps << " ops remaining" << endl;
     if( (MWC % 100) < add_prob )
     {
       queue->add(MWC % 20);
@@ -48,7 +49,11 @@ int main(int argc, char *argv[])
 
   FIFOQueue<int> *queue = new BlockingQueue<int>(20);
 
-  do_work(queue, add_prob, rem_prob);
+  thread thread1(do_work, queue, add_prob, rem_prob);
+  thread thread2(do_work, queue, add_prob, rem_prob);
+
+  thread1.join();
+  thread2.join();
 
   return 0;
 }

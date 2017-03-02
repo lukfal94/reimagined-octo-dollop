@@ -1,17 +1,29 @@
-
 #include "lamport_lock.h"
 
+using namespace std;
+
 LamportLock::LamportLock(int size) :
-  size(size)
+  size(size),
+  next_id(0)
 {
   flags.resize(size, false);
   labels.resize(size, 0);
 }
 
-void LamportLock::lock(int pid)
+void LamportLock::lock()
 {
+  int pid;
   int waiting = 0;
   int counter = 0;
+  
+  // Register with the ID map if first time locking
+  if(!id_map[this_thread::get_id()])
+  {
+    id_map[this_thread::get_id()] = next_id++;
+  }
+
+  pid = id_map[this_thread::get_id()];
+
 
   //Indicate we want the lock
   flags[pid] = true;
@@ -50,8 +62,12 @@ void LamportLock::lock(int pid)
   } while(waiting);
 }
 
-void LamportLock::unlock(int pid)
+void LamportLock::unlock()
 {
+  int pid;
+
+  pid = id_map[this_thread::get_id()];
+
   // Indicate we're no longer waiting
   flags[pid] = false;
 }

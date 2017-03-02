@@ -26,10 +26,25 @@ private:
 
 ostringstream QueueEmptyException::cnvt;
 
-/*
 class QueueFullException : public runtime_error
 {
+public:
+  QueueFullException() : runtime_error( "queue full" ) {};
+
+  virtual const char* what() const throw()
+  {
+    cnvt.str( "" );
+
+    cnvt << runtime_error::what();
+
+    return cnvt.str().c_str();
+  }
+
+private:
+  static ostringstream cnvt;
 
 };
-*/
+
+ostringstream QueueFullException::cnvt;
+
 #endif /* QUEUE_EXCEPTIONS_H */

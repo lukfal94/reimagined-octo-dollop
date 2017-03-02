@@ -8,7 +8,10 @@
 
 #include <exception>
 #include <iostream>
+#include <thread>
+#include <mutex>
 #include <vector>
+
 
 #include "fifoqueue.h"
 #include "lamport_lock.h"
@@ -34,20 +37,19 @@ private:
   int size;
   int capacity;
 
-  Lock        *headLock;
-  Lock        *tailLock;
+  LamportLock headLock;
+  LamportLock tailLock;
   unsigned int numThreads;
 };
 
 template<class T>
-BlockingQueue<T>::BlockingQueue(int tCap, int threadcount)
+BlockingQueue<T>::BlockingQueue(int tCap, int threadCount) :
+  headLock(threadCount),
+  tailLock(threadCount)
 {
   items    = new T[tCap];
   capacity = tCap; 
-  numThreads = threadcount;
-
-  headLock = new LamportLock(numThreads);
-  tailLock = new LamportLock(numThreads);
+  numThreads = threadCount;
 
   size = 0;
   head = 0; 
@@ -57,17 +59,16 @@ BlockingQueue<T>::BlockingQueue(int tCap, int threadcount)
 template<class T>
 bool BlockingQueue<T>::add(T item)
 {
-  tailLock->lock();
+  std::lock_guard<Lock> lg(tailLock);
   try
   {
     if( (tail - head) == capacity )
     {
-      std::cout << "Queue is full!" << std::endl;
-      return false;
+      throw QueueFullException();
     }
     else
     {
-      //    std::cout << "Enqueued: " << item << std::endl;
+      std::cout << "Enqueued: " << item << std::endl;
       items[tail++ % capacity] = item;
       return true;
     }
@@ -75,13 +76,13 @@ bool BlockingQueue<T>::add(T item)
   catch(const exception& e)
   {
     cout << e.what() << endl;
-    tailLock->unlock();
   }
 }
 
   template<class T>
 T BlockingQueue<T>::remove()
 {
+  std::lock_guard<LamportLock> lg(headLock);
   try
   {
     if( tail == head )
@@ -90,6 +91,7 @@ T BlockingQueue<T>::remove()
     }
     else
     {
+      cout << "Dequeued: " << items[head % capacity] << endl;
       return items[head++ % capacity];
     }
   }
