@@ -1,0 +1,15 @@
+CC=g++
+CFLAGS = -g -I -Wall -std=c++11
+LDFLAGS = -pthread
+DEPS = fifoqueue.h basic_queue.h fast_rand.h atomic_value.h
+OBJ = main-non-block.o
+EXC = non_blocking_queue 
+
+%.o: %.cpp $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
+
+make: $(OBJ)
+	$(CC) -o $(EXC) $^ $(LDFLAGS)
+
+clean:
+	rm *.o
