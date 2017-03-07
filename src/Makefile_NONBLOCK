@@ -1,9 +1,14 @@
 CC=g++
 CFLAGS = -g -I -Wall -std=c++11
 LDFLAGS = -pthread
-DEPS = fifoqueue.h basic_queue.h fast_rand.h atomic_value.h
+DEPS = fifoqueue.h \
+			 fast_rand.h \
+			 queue_item.h \
+			 nonblocking_queue.h \
+			 atomic_wrapper.h
+
 OBJ = main-non-block.o
-EXC = non_blocking_queue 
+EXC = main-nonblock
 
 %.o: %.cpp $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)

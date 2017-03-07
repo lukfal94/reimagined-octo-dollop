@@ -6,6 +6,8 @@
 #include <stdexcept>
 #include <sstream>
 
+using namespace std;
+
 class QueueEmptyException : public runtime_error
 {
 public:

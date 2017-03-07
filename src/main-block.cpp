@@ -14,7 +14,7 @@
 
 using namespace std;
 
-atomic<unsigned int> numOps(100);
+atomic<int> numOps(100);
 
 void do_work(FIFOQueue<int>* queue, unsigned int add_prob, unsigned int remove_prob)
 {
@@ -31,6 +31,7 @@ void do_work(FIFOQueue<int>* queue, unsigned int add_prob, unsigned int remove_p
   // on the queue
   while(numOps-- > 0)
   {
+    cout << "Ops remaining: " << numOps.load() << endl;
     if( (MWC % 100) < add_prob )
     {
       queue->add(MWC % 20);
@@ -42,9 +43,10 @@ void do_work(FIFOQueue<int>* queue, unsigned int add_prob, unsigned int remove_p
   }
 }
 
+// usage: ./<exec> <numOps> <queuesize> <num_threads>
 int main(int argc, char *argv[])
 {
-  unsigned int num_threads = 1;
+  unsigned int num_threads = 2;
   unsigned int queue_size  = 20;
 
   unsigned int add_prob    = 50;  
@@ -66,9 +68,16 @@ int main(int argc, char *argv[])
   FIFOQueue<int> *queue = new BlockingQueue<int>(queue_size, num_threads);
   vector<thread>  threads;
 
-  for(int i = 0; i < num_threads; i++)
+  for(int i = 0; i < num_threads / 2; i++)
   {
-    threads.push_back(thread(do_work, queue, add_prob, rem_prob));
+    cout << "Added enqueuer" << endl;
+    threads.push_back(thread(do_work, queue, 100, 0));
+  }
+
+  for(int i = 0; i < num_threads / 2; i++)
+  {
+    cout << "Added dequeue" << endl;
+    threads.push_back(thread(do_work, queue, 0, 100));
   }
 
   for(int i = 0; i < num_threads; i++)

@@ -1,5 +1,5 @@
 /*
- * A basic implementation of a FIFO Queue using std::vector
+ * Blocking queue
  *
  */
 
@@ -68,14 +68,14 @@ bool BlockingQueue<T>::add(T item)
     }
     else
     {
-      //std::cout << "Enqueued: " << item << std::endl;
+      std::cout << "Enqueued: " << item << std::endl;
       items[tail++ % capacity] = item;
       return true;
     }
   }
   catch(const exception& e)
   {
-    //std::cout << e.what() << endl;
+    std::cout << e.what() << endl;
   }
 }
 
@@ -91,13 +91,13 @@ T BlockingQueue<T>::remove()
     }
     else
     {
-      //std::cout << "Dequeued: " << items[head % capacity] << endl;
+      std::cout << "Dequeued: " << items[head % capacity] << endl;
       return items[head++ % capacity];
     }
   }
   catch(const exception& e)
   {
-    //std::cout << e.what() << endl;
+    std::cout << e.what() << endl;
   }
 }
 #endif /* BASIC_QUEUE_H */

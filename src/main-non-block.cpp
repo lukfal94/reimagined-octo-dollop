@@ -3,9 +3,9 @@
 #include <iostream>
 #include <string>
 
-#include "atomic_value.h"
-#include "basic_queue.h"
+#include "queue_item.h"
 #include "fast_rand.h"
+#include "nonblocking_queue.h"
 
 using namespace std;
 
@@ -13,5 +13,6 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
+  FIFOQueue<int> *queue = new NonBlockingQueue<int>(BOUNDED_SIZE);
   return 0;
 }
