@@ -22,8 +22,8 @@ public:
   FIFOQueue<T>()  {};
   ~FIFOQueue<T>() {};
 
-  virtual bool add(T item) = 0;
-  virtual T    remove()    = 0;
+  virtual bool add(T item)              = 0;
+  virtual T    remove(T& result = 0)    = 0;
 
   // It is left to the implementing class to choose
   // an appropriate structure to implement the queue

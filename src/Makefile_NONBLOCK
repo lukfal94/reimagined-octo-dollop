@@ -1,10 +1,11 @@
 CC=g++
 CFLAGS = -g -I -Wall -std=c++11
-LDFLAGS = -pthread
+LDFLAGS = -pthread -ltbb
 DEPS = fifoqueue.h \
 			 fast_rand.h \
 			 queue_item.h \
 			 nonblocking_queue.h \
+			 tbb_wrapper.h \
 			 atomic_wrapper.h
 
 OBJ = main-non-block.o

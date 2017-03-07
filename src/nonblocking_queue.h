@@ -26,7 +26,7 @@ public:
   ~NonBlockingQueue<T>();
 
   bool add(T item);
-  T    remove();
+  T    remove(T& result = 0);
 
 private:
   std::vector<AtomicQueueItem> items;
@@ -65,7 +65,8 @@ bool NonBlockingQueue<T>::add(T item)
   {
     while(true)
     {
-      ;
+      cout << "Non blocking added " << item << endl;
+      return true;
     }
   }
   catch(const exception& e)
@@ -75,7 +76,7 @@ bool NonBlockingQueue<T>::add(T item)
 }
 
 template<class T>
-T NonBlockingQueue<T>::remove()
+T NonBlockingQueue<T>::remove(T& result)
 {
   try
   {

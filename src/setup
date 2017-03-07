@@ -1,0 +1,6 @@
+#!/usr/bin/bash
+
+alias mclean='make -f Makefile_BLOCK'
+alias makeb='make -f Makefile_BLOCK'
+alias makenb='make -f Makefile_NONBLOCK'
+alias verify='diff enq.txt deq.txt'

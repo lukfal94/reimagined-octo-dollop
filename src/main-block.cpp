@@ -1,5 +1,6 @@
 #include <atomic>
 #include <iostream>
+#include <fstream>
 #include <functional>
 #include <string>
 #include <thread>
