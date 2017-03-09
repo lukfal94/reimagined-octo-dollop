@@ -27,10 +27,10 @@ public:
   T    remove(T& result = 0);
 
 private:
-  std::vector<QueueItem<T>::AtomicQueueItem*> items;
+  std::vector<QueueItem<T>*> items;
 
-  QueueItem<T>::AtomicQueueItem* head;
-  QueueItem<T>::AtomicQueueItem* tail;
+  std::atomic<QueueItem<T>*> head;
+  std::atomic<QueueItem<T>*> tail;
 
   unsigned int size;
   unsigned int capacity;
@@ -38,17 +38,22 @@ private:
 
 template<class T>
 NonBlockingQueue<T>::NonBlockingQueue(int tCap) :
-  head(0),
-  tail(0)
+  head(new QueueItem<T>(0)),
+  tail(new QueueItem<T>(0))
 {
+  // Initialize the head and tail pointer to the same null node
+  QueueItem<T>* node = new QueueItem<T>(0); 
+/*
+  head.compare_exchange_weak(node->next.load(), node,
+                            std::memory_order_release,
+                            std::memory_order_relaxed);
+
+  tail.compare_exchange_weak(node->next.load(), node,
+                            std::memory_order_release,
+                            std::memory_order_relaxed);
+*/
   items.resize(tCap);
   capacity = tCap;
-
-  // Init queue items
-  for(int i = 0; i < capacity; i ++)
-  {
-    items[i] = new QueueItem<T>::AtomicQueueItem();
-  }
 
   size = 0;
 }
@@ -56,13 +61,37 @@ NonBlockingQueue<T>::NonBlockingQueue(int tCap) :
 template<class T>
 bool NonBlockingQueue<T>::add(T item)
 {
-  QueueItem<T>::AtomicQueueItem last;
-  QueueItem<T>::AtomicQueueItem next;
-
   try
   {
+    // Create a QueueItem for the new data
+    QueueItem<T>* new_item = new QueueItem<T>(item);
     while(true)
     {
+      QueueItem<T>* tail_old = tail.load();
+      QueueItem<T>* next     = tail_old->next;
+      if(tail_old = tail.load())
+      {
+        // If next == null
+        /*
+        if(!next)
+        {
+          if(tail_old->next.compare_exchange_weak(next, new_item,
+                std::memory_order_release,
+                std::memory_order_relaxed))
+          {
+            tail.compare_exchange_weak(tail_old, new_item,
+                std::memory_order_release,
+                std::memory_order_relaxed);
+          }
+        }
+        else
+        {
+          tail.compare_exchange_weak(tail_old, next,
+            std::memory_order_release,
+            std::memory_order_relaxed);
+        }
+        */
+      }
       cout << "Non blocking added " << item << endl;
       return true;
     }

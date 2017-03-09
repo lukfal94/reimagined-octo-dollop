@@ -24,10 +24,8 @@ int main(int argc, char *argv[])
   enqFile.open("enq.txt");
   deqFile.open("deq.txt");
 
-  FIFOQueue<int> *queue = new NonBlockingQueue<int>(BOUNDED_SIZE);
+  //FIFOQueue<int> *queue = new NonBlockingQueue<int>(BOUNDED_SIZE);
   FIFOQueue<int> *tbb2  = new TBBWrapper<int>();
-
-  NonBlockingQueue<int>::AtomicQueueItem foo;
 
   vector<FIFOQueue<int>*> queues;
   queues.push_back(new NonBlockingQueue<int>(BOUNDED_SIZE));
@@ -48,7 +46,7 @@ int main(int argc, char *argv[])
     deqFile << result << " ";
   }
 
-  delete queue;
+  //delete queue;
   delete tbb2;
 
   enqFile.close();

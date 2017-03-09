@@ -3,43 +3,64 @@
 
 #include <atomic>
 
-#include "atomic_wrapper.h"
+template<class T>
+struct QueueItem
+{
+  T data;
+  std::atomic<QueueItem<T>*>   next;
+  std::atomic<unsigned int> version;
+  QueueItem() : data(0), next(0), version(0) {}
+  QueueItem(const T& data) : data(data), next(0), version(0) {}
+  QueueItem(const T& data, std::atomic<QueueItem<T>*> next, unsigned int vers) : 
+    data(data), next(next), version(vers) {}
+};
 
+/*
 template<class T>
 class QueueItem
 {
 public:
-  // AtomicQueueItem provides an interface for easily
-  // constructing and manipulating items with an atomic
-  // version number. The AtomicQueueItem is only 8B and
-  // is lock-free on the Intel x86_64 architecture
-  typedef AtomicWrapper<QueueItem<T>*> AtomicQueueItem;
+  //Default
+  QueueItem<T>() :
+    next(0),
+    counter(0)
+  {
+    item = 0;
+  }
 
-  QueueItem<T>();
-  QueueItem<T>(T* value);
-  ~QueueItem<T>() {};
+  QueueItem<T>(const QueueItem<T> &source)
+  {
+    next = source.next;
+  }
 
-  T*               getItem()    { return item;    }
-  std::atomic<int> getCounter() { return counter; }
+  ~QueueItem<T>()
+  {
+    next->store(0);
+  }
 
-  AtomicQueueItem *next = 0;
-  T                                 *item = 0;
+  QueueItem<T>& operator =(QueueItem<T> &source)
+  {
+    next = source.next;
+    counter = source.counter;
+    return *this;
+  }
 
-  std::atomic<int> counter;
+  QueueItem<T>(T* item , const QueueItem<T> &next_ptr, unsigned int version)
+  {
+    item = item;
+    next = next_ptr;
+    counter.store(version);
+  }
+
+  T*                        getItem()    { return item;    }
+  std::atomic<unsigned int> getCounter() { return counter; }
+
+  QueueItem<T>* next;
+  std::atomic<unsigned int> counter;
+
+  T* item = 0;
+
 };
-
-template<class T>
-QueueItem<T>::QueueItem(T* value) :
-  counter(0)
-{
-  item = value;
-}
-
-template<class T>
-QueueItem<T>::QueueItem() :
-  counter(-1)
-{
-  item = 0;
-}
+*/
 
 #endif /* QUEUE_ITEM_H */
