@@ -27,6 +27,8 @@ int main(int argc, char *argv[])
   FIFOQueue<int> *queue = new NonBlockingQueue<int>(BOUNDED_SIZE);
   FIFOQueue<int> *tbb2  = new TBBWrapper<int>();
 
+  NonBlockingQueue<int>::AtomicQueueItem foo;
+
   vector<FIFOQueue<int>*> queues;
   queues.push_back(new NonBlockingQueue<int>(BOUNDED_SIZE));
   queues.push_back(new TBBWrapper<int>());
@@ -36,13 +38,13 @@ int main(int argc, char *argv[])
   for(int i = 0; i < 1000; i++)
   {
     enqFile << i % 10 << " ";
-    tbb2->add(i % 10);
+//    tbb2->add(i % 10);
   }
 
   for(int i = 0; i < 1000; i++)
   {
     int result;
-    tbb2->remove(result);  
+ //   tbb2->remove(result);  
     deqFile << result << " ";
   }
 

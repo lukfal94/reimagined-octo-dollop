@@ -1,5 +1,5 @@
 /*
- * Nonblocking Queue
+ * Unbounded nonblocking Queue
  *
  */
 
@@ -20,8 +20,6 @@ template<class T>
 class NonBlockingQueue : public FIFOQueue<T>
 {
 public:
-  typedef AtomicWrapper<QueueItem<T>*> AtomicQueueItem;
-
   NonBlockingQueue<T>(int size);
   ~NonBlockingQueue<T>();
 
@@ -29,10 +27,10 @@ public:
   T    remove(T& result = 0);
 
 private:
-  std::vector<AtomicQueueItem> items;
+  std::vector<QueueItem<T>::AtomicQueueItem*> items;
 
-  std::atomic<unsigned int> head;
-  std::atomic<unsigned int> tail;
+  QueueItem<T>::AtomicQueueItem* head;
+  QueueItem<T>::AtomicQueueItem* tail;
 
   unsigned int size;
   unsigned int capacity;
@@ -49,7 +47,7 @@ NonBlockingQueue<T>::NonBlockingQueue(int tCap) :
   // Init queue items
   for(int i = 0; i < capacity; i ++)
   {
-    //items[i] = new QueueItem<T>();
+    items[i] = new QueueItem<T>::AtomicQueueItem();
   }
 
   size = 0;
@@ -58,8 +56,8 @@ NonBlockingQueue<T>::NonBlockingQueue(int tCap) :
 template<class T>
 bool NonBlockingQueue<T>::add(T item)
 {
-  AtomicQueueItem last;
-  AtomicQueueItem next;
+  QueueItem<T>::AtomicQueueItem last;
+  QueueItem<T>::AtomicQueueItem next;
 
   try
   {

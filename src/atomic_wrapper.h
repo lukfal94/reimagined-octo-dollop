@@ -1,6 +1,14 @@
 #ifndef ATOMIC_WRAPPER_H
 #define ATOMIC_WRAPPER_H
 
+#include <atomic>
+
+#include "queue_item.h"
+
+template<class T>
+class QueueItem;
+
+
 template<class T>
 class AtomicWrapper
 {
@@ -18,7 +26,8 @@ public:
     _a.store(other._a.load());
   }
 
-private:
+  bool is_lock_free() { return _a.is_lock_free(); }
+
   std::atomic<T> _a;
 };
 
