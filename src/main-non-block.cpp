@@ -36,6 +36,7 @@ int main(int argc, char *argv[])
   for(int i = 0; i < 1000; i++)
   {
     enqFile << i % 10 << " ";
+    queues[0]->add(i % 10);
 //    tbb2->add(i % 10);
   }
 
@@ -43,6 +44,7 @@ int main(int argc, char *argv[])
   {
     int result;
  //   tbb2->remove(result);  
+    queues[0]->remove(result);
     deqFile << result << " ";
   }
 

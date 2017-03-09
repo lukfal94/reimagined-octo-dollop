@@ -37,21 +37,13 @@ private:
 };
 
 template<class T>
-NonBlockingQueue<T>::NonBlockingQueue(int tCap) :
-  head(new QueueItem<T>(0)),
-  tail(new QueueItem<T>(0))
+NonBlockingQueue<T>::NonBlockingQueue(int tCap)
 {
   // Initialize the head and tail pointer to the same null node
   QueueItem<T>* node = new QueueItem<T>(0); 
-/*
-  head.compare_exchange_weak(node->next.load(), node,
-                            std::memory_order_release,
-                            std::memory_order_relaxed);
+  head.store(node);
+  tail.store(node);
 
-  tail.compare_exchange_weak(node->next.load(), node,
-                            std::memory_order_release,
-                            std::memory_order_relaxed);
-*/
   items.resize(tCap);
   capacity = tCap;
 
@@ -61,57 +53,81 @@ NonBlockingQueue<T>::NonBlockingQueue(int tCap) :
 template<class T>
 bool NonBlockingQueue<T>::add(T item)
 {
-  try
+  // Create a QueueItem for the new data
+  QueueItem<T>* new_item = new QueueItem<T>(item);
+  while(true)
   {
-    // Create a QueueItem for the new data
-    QueueItem<T>* new_item = new QueueItem<T>(item);
-    while(true)
+    std::cout << "spinning..." << std::endl;
+    QueueItem<T>* tail_old = tail.load();
+    QueueItem<T>* next     = tail_old->next;
+    if(tail_old = tail.load())
     {
-      QueueItem<T>* tail_old = tail.load();
-      QueueItem<T>* next     = tail_old->next;
-      if(tail_old = tail.load())
+      // If next == null
+      std::cout << "tail valid" << std::endl;
+      if(!next)
       {
-        // If next == null
-        /*
-        if(!next)
+        std::cout << "next valid" << std::endl;
+        if(tail_old->next.compare_exchange_weak(next, new_item,
+              std::memory_order_release,
+              std::memory_order_relaxed))
         {
-          if(tail_old->next.compare_exchange_weak(next, new_item,
-                std::memory_order_release,
-                std::memory_order_relaxed))
-          {
-            tail.compare_exchange_weak(tail_old, new_item,
-                std::memory_order_release,
-                std::memory_order_relaxed);
-          }
+          std::cout << "CAS succeeded" << std::endl;
+          tail.compare_exchange_weak(tail_old, new_item,
+              std::memory_order_release,
+              std::memory_order_relaxed);
         }
-        else
-        {
-          tail.compare_exchange_weak(tail_old, next,
+      }
+      else
+      {
+        std::cout << "next invalid" << std::endl;
+        tail.compare_exchange_weak(tail_old, next,
             std::memory_order_release,
             std::memory_order_relaxed);
-        }
-        */
       }
-      cout << "Non blocking added " << item << endl;
-      return true;
     }
-  }
-  catch(const exception& e)
-  {
-    std::cout << e.what() << endl;
+    cout << "Non blocking added " << item << endl;
+    return true;
   }
 }
 
 template<class T>
 T NonBlockingQueue<T>::remove(T& result)
 {
-  try
+  while(true)
   {
-;
-  }
-  catch(const exception& e)
-  {
-    std::cout << e.what() << endl;
+    QueueItem<T>* head_old = head.load();
+    QueueItem<T>* tail_old = tail.load();
+    QueueItem<T>* next     = head_old->next.load();
+
+    if(head_old == head.load())
+    {
+      std::cout << "head valid" << std::endl;
+      if(head_old == tail_old)
+      {
+        std::cout << "head == tail" << std::endl;
+        // if next == null
+        if(!next)
+        {
+          throw QueueEmptyException();
+          return 0;
+        }
+        tail.compare_exchange_weak(tail_old, next,
+          std::memory_order_release,
+          std::memory_order_relaxed);
+      }
+      else
+      {
+        std::cout << "head != tail" << std::endl;
+        result = next->data;
+        if(head.compare_exchange_weak(head_old, next,
+          std::memory_order_release,
+          std::memory_order_relaxed))
+        {
+          std::cout << "dequeue success" << std::endl;
+          return result;
+        }
+      }
+    }
   }
 }
 #endif /* NON_BLOCKING_QUEUE_H */
