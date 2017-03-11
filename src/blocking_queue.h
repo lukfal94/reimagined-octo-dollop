@@ -1,6 +1,9 @@
 /*
  * Blocking queue
  *
+ * Luke Fallon
+ * 10 March 2017
+ *
  */
 
 #ifndef BLOCKING_QUEUE_H
@@ -60,8 +63,6 @@ BlockingQueue<T>::BlockingQueue(int tCap) :
 {
   items    = new T[tCap];
   capacity = tCap; 
-
-  cout << "Created a BlockingQueue with capacity : " << capacity << endl << endl;
 }
 
 template<class T>
@@ -69,31 +70,21 @@ bool BlockingQueue<T>::add(T item)
 {
   bool wakeDequeuers = false;
   std::unique_lock<std::mutex> lg(tailLock);
-
-  cout << "Added : " << item << endl;
-
-  cout << this_thread::get_id() << " looking for lock" << endl;
   
   //Wait until the queue is not full 
   while(size.load() == capacity)
     notFullCond.wait(lg);
 
-  cout << this_thread::get_id() << " got the lock" << endl;
   // Insert the item
   items[tail++ % capacity] = item;
 
   // Increment the size
   if(size.fetch_add(1) == 0)
-  { 
-    cout << "Woke deq" << endl;
     wakeDequeuers = true;
-  }
 
   // If size was previously 0, wake deq threads
   if(wakeDequeuers)
-  {
     notEmptyCond.notify_all(); 
-  }
 
   lg.unlock();
 }
@@ -111,16 +102,13 @@ T BlockingQueue<T>::remove(T& result)
   //Get the value
   result = items[head++ % capacity];
 
-  cout << "Removed : " << result << endl;
-
   if(size.fetch_sub(1) == capacity)
     wakeEnqueuers = true;
 
   if(wakeEnqueuers)
-  {
     notFullCond.notify_all();
-  }
 
+  // lg will unlock when we return bc of RAII
   return result;
 }
 #endif /* BASIC_QUEUE_H */

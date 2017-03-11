@@ -1,5 +1,7 @@
 #!/usr/bin/bash
 
+TIMEFORMAT=%R
+
 alias mclean='make -f Makefile_BLOCK'
 alias makeb='make -f Makefile_BLOCK'
 alias makenb='make -f Makefile_NONBLOCK'

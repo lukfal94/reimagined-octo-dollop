@@ -20,12 +20,6 @@ using namespace tbb;
 
 #define BOUNDED_SIZE 5000
 
-ofstream enqFile;
-ofstream deqFile;
-
-std::mutex enqFileLock;
-std::mutex deqFileLock;
-
 std::atomic<int> numOps(0);
 std::atomic<int> numEnq(0);
 std::atomic<int> numDeq(0);
@@ -63,7 +57,7 @@ void do_work(FIFOQueue<int>* queue)
     catch(const exception& e)
     {
       numFailedDeq++;
-//      std::cout << e.what() << std::endl;
+      std::cout << e.what() << std::endl;
       continue; 
     }
     numOps++;
@@ -74,46 +68,38 @@ int main(int argc, char *argv[])
 {
   vector<FIFOQueue<int>*> queues;
   vector<thread*>         threads;
+  
+  // Config parameters
   unsigned int queue_size  = BOUNDED_SIZE;
   unsigned int num_ops     = 50;
   unsigned int queue_type  = 0;
   unsigned int num_threads = 1;
   unsigned int fill_queue  = 0;
   unsigned int enq_ratio   = 50;
-  unsigned int enq_ratio   = 50;
-
+  unsigned int deq_ratio   = 50;
 
   // Get command line arguments
   if(argc == 1)
   {
     cout << "Usage: ./queues <queue_size> <num_ops> <queue_type> <num_threads> <prefill_queue> <enq_ratio>" << endl;
+    cout << "  <queue_type> : 0=NonBlocking, 1=Blocking, 2=TBB " << endl;
     return 0;
   }
 
   if(argc > 1)
-  {
     queue_size = atoi(argv[1]);
-  }
-
+  
   if(argc > 2)
-  {
     num_ops = atoi(argv[2]);
-  }
 
   if(argc > 3)
-  {
     queue_type = atoi(argv[3]);
-  }
 
   if(argc > 4)
-  {
     num_threads = atoi(argv[4]);
-  }
 
   if(argc> 5)
-  {
-    prefill_queue = atoi(argv[5]);
-  }
+    fill_queue = atoi(argv[5]);
 
   if(argc > 6)
   {

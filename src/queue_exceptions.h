@@ -49,4 +49,26 @@ private:
 
 ostringstream QueueFullException::cnvt;
 
+class CounterOverflowException : public runtime_error
+{
+public:
+  CounterOverflowException(int val) : runtime_error( "counter overflow" ), value(val) {};
+
+  virtual const char* what() const throw()
+  {
+    cnvt.str( "" );
+
+    cnvt << runtime_error::what() << " " << value;
+
+    return cnvt.str().c_str();
+  }
+
+private:
+  static ostringstream cnvt;
+  int    value;
+
+};
+
+ostringstream CounterOverflowException::cnvt;
+
 #endif /* QUEUE_EXCEPTIONS_H */
