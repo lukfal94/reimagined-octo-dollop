@@ -6,6 +6,8 @@
 #ifndef BLOCKING_QUEUE_H
 #define BLOCKING_QUEUE_H
 
+#include <atomic>
+#include <condition_variable>
 #include <exception>
 #include <iostream>
 #include <thread>
@@ -17,87 +19,108 @@
 #include "lamport_lock.h"
 #include "queue_exceptions.h"
 
+using namespace std;
+
 template<class T>
 class BlockingQueue : public FIFOQueue<T>
 {
-public:
-  BlockingQueue<T>(int size, int threads = 1);
-  ~BlockingQueue<T>();
+  public:
+    BlockingQueue<T>(int size);
+    ~BlockingQueue<T>();
 
-  bool add(T item);
-  T    remove();
+    bool add(T item);
+    T    remove(T& result);
 
-private:
-  T *items;
+  private:
+    T *items;
 
-  int head;
-  int tail;
+    std::atomic<int> head;
+    std::atomic<int> tail;
 
-  //Implement as a bounded size queue
-  int size;
-  int capacity;
+    std::atomic<int> size;
+    int capacity;
 
-  LamportLock headLock;
-  LamportLock tailLock;
-  unsigned int numThreads;
+    std::mutex  headLock;
+    std::mutex  tailLock;
+
+    std::condition_variable notEmptyCond;
+    std::condition_variable notFullCond;
+
+    std::atomic<bool> queueNotEmpty;
+    std::atomic<bool> queueNotFull;
+
+    unsigned int numThreads;
 };
 
 template<class T>
-BlockingQueue<T>::BlockingQueue(int tCap, int threadCount) :
-  headLock(threadCount),
-  tailLock(threadCount)
+BlockingQueue<T>::BlockingQueue(int tCap) :
+  size(0),
+  head(0),
+  tail(0)
 {
   items    = new T[tCap];
   capacity = tCap; 
-  numThreads = threadCount;
 
-  size = 0;
-  head = 0; 
-  tail = 0;
+  cout << "Created a BlockingQueue with capacity : " << capacity << endl << endl;
 }
 
 template<class T>
 bool BlockingQueue<T>::add(T item)
 {
-  std::lock_guard<Lock> lg(tailLock);
-  try
-  {
-    if( (tail - head) == capacity )
-    {
-      throw QueueFullException();
-    }
-    else
-    {
-      std::cout << "Enqueued: " << item << std::endl;
-      items[tail++ % capacity] = item;
-      return true;
-    }
+  bool wakeDequeuers = false;
+  std::unique_lock<std::mutex> lg(tailLock);
+
+  cout << "Added : " << item << endl;
+
+  cout << this_thread::get_id() << " looking for lock" << endl;
+  
+  //Wait until the queue is not full 
+  while(size.load() == capacity)
+    notFullCond.wait(lg);
+
+  cout << this_thread::get_id() << " got the lock" << endl;
+  // Insert the item
+  items[tail++ % capacity] = item;
+
+  // Increment the size
+  if(size.fetch_add(1) == 0)
+  { 
+    cout << "Woke deq" << endl;
+    wakeDequeuers = true;
   }
-  catch(const exception& e)
+
+  // If size was previously 0, wake deq threads
+  if(wakeDequeuers)
   {
-    std::cout << e.what() << endl;
+    notEmptyCond.notify_all(); 
   }
+
+  lg.unlock();
 }
 
-  template<class T>
-T BlockingQueue<T>::remove()
+template<class T>
+T BlockingQueue<T>::remove(T& result)
 {
-  std::lock_guard<LamportLock> lg(headLock);
-  try
+  bool wakeEnqueuers = true;
+  std::unique_lock<std::mutex> lg(headLock);
+  
+  //Wait until the queue is not empty
+  while(size.load() == 0)
+    notEmptyCond.wait(lg);
+
+  //Get the value
+  result = items[head++ % capacity];
+
+  cout << "Removed : " << result << endl;
+
+  if(size.fetch_sub(1) == capacity)
+    wakeEnqueuers = true;
+
+  if(wakeEnqueuers)
   {
-    if( tail == head )
-    {
-      throw QueueEmptyException();
-    }
-    else
-    {
-      std::cout << "Dequeued: " << items[head % capacity] << endl;
-      return items[head++ % capacity];
-    }
+    notFullCond.notify_all();
   }
-  catch(const exception& e)
-  {
-    std::cout << e.what() << endl;
-  }
+
+  return result;
 }
 #endif /* BASIC_QUEUE_H */

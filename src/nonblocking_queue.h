@@ -57,21 +57,17 @@ bool NonBlockingQueue<T>::add(T item)
   QueueItem<T>* new_item = new QueueItem<T>(item);
   while(true)
   {
-    std::cout << "spinning..." << std::endl;
     QueueItem<T>* tail_old = tail.load();
     QueueItem<T>* next     = tail_old->next;
     if(tail_old = tail.load())
     {
       // If next == null
-      std::cout << "tail valid" << std::endl;
       if(!next)
       {
-        std::cout << "next valid" << std::endl;
         if(tail_old->next.compare_exchange_weak(next, new_item,
               std::memory_order_release,
               std::memory_order_relaxed))
         {
-          std::cout << "CAS succeeded" << std::endl;
           tail.compare_exchange_weak(tail_old, new_item,
               std::memory_order_release,
               std::memory_order_relaxed);
@@ -79,13 +75,11 @@ bool NonBlockingQueue<T>::add(T item)
       }
       else
       {
-        std::cout << "next invalid" << std::endl;
         tail.compare_exchange_weak(tail_old, next,
             std::memory_order_release,
             std::memory_order_relaxed);
       }
     }
-    cout << "Non blocking added " << item << endl;
     return true;
   }
 }
@@ -101,10 +95,8 @@ T NonBlockingQueue<T>::remove(T& result)
 
     if(head_old == head.load())
     {
-      std::cout << "head valid" << std::endl;
       if(head_old == tail_old)
       {
-        std::cout << "head == tail" << std::endl;
         // if next == null
         if(!next)
         {
@@ -117,13 +109,11 @@ T NonBlockingQueue<T>::remove(T& result)
       }
       else
       {
-        std::cout << "head != tail" << std::endl;
         result = next->data;
         if(head.compare_exchange_weak(head_old, next,
           std::memory_order_release,
           std::memory_order_relaxed))
         {
-          std::cout << "dequeue success" << std::endl;
           return result;
         }
       }
