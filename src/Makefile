@@ -4,14 +4,11 @@ LDFLAGS = -pthread -ltbb
 DEPS = fifoqueue.h \
 			 fast_rand.h \
 			 queue_item.h \
-			 lamport_lock.h \
-			 lock.h \
 			 nonblocking_queue.h \
 			 tbb_wrapper.h \
-			 atomic_wrapper.h \
 			 blocking_queue.h
 
-OBJ = main.o lamport_lock.o
+OBJ = main.o
 EXC = queues
 
 %.o: %.cpp $(DEPS)

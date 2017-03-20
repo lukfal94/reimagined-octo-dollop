@@ -19,7 +19,6 @@
 
 
 #include "fifoqueue.h"
-#include "lamport_lock.h"
 #include "queue_exceptions.h"
 
 using namespace std;
@@ -28,7 +27,7 @@ template<class T>
 class BlockingQueue : public FIFOQueue<T>
 {
   public:
-    BlockingQueue<T>(int size);
+    BlockingQueue<T>(int size, bool fill);
     ~BlockingQueue<T>();
 
     bool add(T item);
@@ -56,13 +55,21 @@ class BlockingQueue : public FIFOQueue<T>
 };
 
 template<class T>
-BlockingQueue<T>::BlockingQueue(int tCap) :
+BlockingQueue<T>::BlockingQueue(int tCap, bool fill) :
   size(0),
   head(0),
   tail(0)
 {
   items    = new T[tCap];
   capacity = tCap; 
+
+  if(fill)
+  {
+    for(int i = 0; i < capacity; i++)
+    {
+      add((T) 0);
+    }
+  }
 }
 
 template<class T>

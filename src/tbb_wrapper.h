@@ -17,7 +17,7 @@ template<class T>
 class TBBWrapper : public FIFOQueue<T>
 {
 public:
-  TBBWrapper<T>()  {};
+  TBBWrapper<T>(int size, bool fill);
   ~TBBWrapper<T>() {};
 
   bool add(T item)        { queue.push(item); }
@@ -36,5 +36,14 @@ public:
 private:
   tbb::concurrent_queue<T> queue;
 };
+
+template<class T>
+TBBWrapper<T>::TBBWrapper(int size, bool fill)
+{
+  for(int i; i < size; i++)
+  {
+    queue.push((T) 0);
+  }
+}
 
 #endif /* TBB_WRAPPER_H */

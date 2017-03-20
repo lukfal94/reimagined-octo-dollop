@@ -11,7 +11,6 @@
 #include <mutex>
 #include <vector>
 
-#include "atomic_wrapper.h"
 #include "fifoqueue.h"
 #include "queue_exceptions.h"
 #include "queue_item.h"
@@ -20,7 +19,7 @@ template<class T>
 class NonBlockingQueue : public FIFOQueue<T>
 {
   public:
-    NonBlockingQueue<T>(int size);
+    NonBlockingQueue<T>(int size, bool fill);
     ~NonBlockingQueue<T>();
 
     bool add(T item);
@@ -43,7 +42,7 @@ class NonBlockingQueue : public FIFOQueue<T>
 };
 
   template<class T>
-NonBlockingQueue<T>::NonBlockingQueue(int tCap)
+NonBlockingQueue<T>::NonBlockingQueue(int tCap, bool fill)
 {
   // Initialize the head and tail pointer to the same null node
   QueueItem<T>* node = new QueueItem<T>(0); 
