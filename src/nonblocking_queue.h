@@ -19,7 +19,7 @@ template<class T>
 class NonBlockingQueue : public FIFOQueue<T>
 {
   public:
-    NonBlockingQueue<T>(int size, bool fill);
+    NonBlockingQueue<T>(bool fill);
     ~NonBlockingQueue<T>();
 
     bool add(T item);
@@ -38,11 +38,10 @@ class NonBlockingQueue : public FIFOQueue<T>
     std::atomic<QueueItem<T>*> tail;
 
     unsigned int size;
-    unsigned int capacity;
 };
 
   template<class T>
-NonBlockingQueue<T>::NonBlockingQueue(int tCap, bool fill)
+NonBlockingQueue<T>::NonBlockingQueue(bool fill)
 {
   // Initialize the head and tail pointer to the same null node
   QueueItem<T>* node = new QueueItem<T>(0); 
@@ -52,9 +51,6 @@ NonBlockingQueue<T>::NonBlockingQueue(int tCap, bool fill)
 
   head.store(node);
   tail.store(node);
-
-  items.resize(tCap);
-  capacity = tCap;
 
   size = 0;
 }

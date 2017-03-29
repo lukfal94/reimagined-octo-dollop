@@ -10,6 +10,7 @@
 #include "tbb_wrapper.h"
 
 #include "blocking_queue.h"
+#include "counted_ptr.h"
 #include "fast_rand.h"
 #include "nonblocking_queue.h"
 #include "queue_item.h"
@@ -64,11 +65,10 @@ void do_work(FIFOQueue<int>* queue, unsigned int enq_ratio)
 
 int main(int argc, char *argv[])
 {
-  vector<FIFOQueue<int>*> queues;
-  vector<thread*>         threads;
+  FIFOQueue<int>* queue;
+  vector<thread*> threads;
   
   // Config parameters
-  unsigned int queue_size  = BOUNDED_SIZE;
   unsigned int num_ops     = 50;
   unsigned int queue_type  = 0;
   unsigned int num_threads = 1;
@@ -76,43 +76,70 @@ int main(int argc, char *argv[])
   unsigned int deq_ratio   = 50;
   bool fill_queue          = false;
 
+
   // Get command line arguments
   if(argc == 1)
   {
-    cout << "Usage: ./queues <queue_type> <num_ops> <queue_size> <num_threads> <prefill_queue> <enq_ratio>" << endl;
-    cout << "  <queue_type> : 0=NonBlocking, 1=Blocking, 2=TBB " << endl;
+    cout << "Usage: ./queues <num_ops> <num_threads>" << endl;
     return 0;
   }
 
   if(argc > 1)
-    queue_type = atoi(argv[1]);
+    num_ops = atoi(argv[1]);
 
   if(argc > 2)
-    num_ops = atoi(argv[2]);
-
-  if(argc > 3)
-    queue_size = atoi(argv[3]);
-
-  if(argc > 4)
-    num_threads = atoi(argv[4]);
-
-  if(argc> 5)
-    fill_queue = (bool) atoi(argv[5]);
-
-  if(argc > 6)
-  {
-    enq_ratio = atoi(argv[6]);
-  }
+    num_threads = atoi(argv[2]);
 
   numOps.store(num_ops);
 
-  queues.push_back(new NonBlockingQueue<int>(queue_size, fill_queue));
-  queues.push_back(new BlockingQueue<int>(queue_size, fill_queue));
-  queues.push_back(new TBBWrapper<int>(queue_size, fill_queue));
+  queue = new NonBlockingQueue<int>(fill_queue);
+
+  /*
+   *
+   *
+   */
+
+  struct myStruct
+  {
+    int member;
+  };
+
+  /* UNIT TESTING */
+  myStruct *ms = new myStruct();
+
+  ms->member = 5;
+
+  cout << "initial: " << hex << ms << dec << ", val: " << ms->member << endl;
+
+  CountedPtr::initialize((uint64_t&)ms);
+
+  for(int i = 0; i < 8; i++)
+  {
+    std::atomic<myStruct*> prev = ms;
+    CountedPtr::set_counter((uint64_t&) ms, i);
+
+    prev.compare_exchange_weak(prev, ms, 
+        std::memory_order_release, std::memory_order_relaxed);
+    
+    cout << " clean : " << hex << (myStruct*) CountedPtr::clean_ptr((void*) ms) << dec;
+    cout << " count : " << CountedPtr::get_counter((uint64_t)ms);
+    cout << " value : " << ((myStruct*) CountedPtr::clean_ptr((void*) ms))->member << endl;
+  }
+
+  return 0;
+ 
+  /*
+   *
+   *
+   */
+
+
+
+
 
   for(int i = 0; i < num_threads; i++)
   {
-    threads.push_back(new thread(do_work, queues[queue_type], enq_ratio));
+    threads.push_back(new thread(do_work, queue, enq_ratio));
   }
 
   for(int i = 0; i < num_threads; i++)
